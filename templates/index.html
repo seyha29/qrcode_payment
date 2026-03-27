@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KHQR Payment Checkout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 0;
+            max-width: 450px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee;
+            border-left: 4px solid #f66;
+            color: #c33;
+            padding: 14px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e0e0e0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .qr-result {
+            display: none;
+            animation: slideUp 0.4s ease;
+        }
+
+        .qr-result.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .qr-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .qr-image {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .qr-image img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .timer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .countdown {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .countdown.warning {
+            color: #ffa500;
+        }
+
+        .countdown.critical {
+            color: #ff4444;
+        }
+
+        .bill-info {
+            background: #f0f4ff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .bill-info p {
+            margin: 10px 0;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .bill-info strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .bill-label {
+            color: #999;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bill-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 2px;
+            word-break: break-all;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .status-container {
+            padding: 25px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status {
+            font-size: 16px;
+            font-weight: 700;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            animation: bounce 0.6s ease infinite;
+        }
+
+        .status.success .status-icon {
+            animation: scaleIn 0.4s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .confirm-btn {
+            width: 100%;
+            padding: 14px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: none;
+            margin-top: 15px;
+        }
+
+        .confirm-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .status-text {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .status-subtext {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px 30px;
+            background: #f8f9fa;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 0;
+                height: 100vh;
+                max-width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .content {
+                flex: 1;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .qr-image {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 Secure Checkout</h1>
+            <p>Fast & Secure KHQR Payment</p>
+        </div>
+
+        <div class="content">
+            <div class="error-message" id="errorMessage"></div>
+
+            <form id="qrForm">
+                <div class="form-group">
+                    <label for="amount">Amount to Pay</label>
+                    <input type="number" id="amount" name="amount" value="1" min="0.01" step="0.01" required>
+                </div>
+                <button type="submit" id="createBtn" class="generate-btn">Generate QR Code</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Creating secure payment...</div>
+            </div>
+
+            <div class="qr-result" id="qrResult">
+                <div class="qr-container">
+                    <div class="qr-image">
+                        <img id="qrImage" src="" alt="KHQR Payment QR Code">
+                    </div>
+                    <div class="timer">
+                        <div style="font-size: 12px; color: #999; margin-bottom: 8px;">Payment expires in</div>
+                        <div class="countdown" id="countdown">3:00</div>
+                    </div>
+                </div>
+
+                <div class="bill-info">
+                    <div>
+                        <div class="bill-label">Bill Number</div>
+                        <div class="bill-value" id="billNumber">-</div>
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <div class="bill-label">Amount</div>
+                        <div class="bill-value">$ <span id="resultAmount">0.00</span> USD</div>
+                    </div>
+                </div>
+
+                <div class="status-container">
+                    <div class="status pending show" id="paymentStatus">
+                        <div class="status-icon">⏳</div>
+                        <div class="status-text">Waiting for Payment</div>
+                        <div class="status-subtext">Scan the QR code with any KHQR-enabled app</div>
+                    </div>
+                </div>
+
+                <button type="button" id="confirmBtn" class="confirm-btn">Confirm & Close</button>
+            </div>
+        </div>
+
+        <div class="footer" id="footer">
+            Secure payment powered by Bakong KHQR
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const form = document.getElementById('qrForm');
+        const createBtn = document.getElementById('createBtn');
+        const loading = document.getElementById('loading');
+        const qrResult = document.getElementById('qrResult');
+        const qrImage = document.getElementById('qrImage');
+        const billNumber = document.getElementById('billNumber');
+        const resultAmount = document.getElementById('resultAmount');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const paymentStatus = document.getElementById('paymentStatus');
+        const errorMessage = document.getElementById('errorMessage');
+        const countdown = document.getElementById('countdown');
+        const footer = document.getElementById('footer');
+
+        let currentMd5 = '';
+        let currentAmount = '';
+        let autoCheckInterval = null;
+        let countdownInterval = null;
+        let socket = null;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const amount = document.getElementById('amount').value;
+            currentAmount = amount;
+
+            createBtn.disabled = true;
+            form.style.display = 'none';
+            loading.style.display = 'block';
+            errorMessage.classList.remove('show');
+
+            try {
+                const response = await fetch(`/create?amount=${amount}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentMd5 = data.md5;
+                    billNumber.textContent = data.bill;
+                    resultAmount.textContent = parseFloat(amount).toFixed(2);
+                    qrImage.src = data.qr;
+                    qrResult.classList.add('show');
+
+                    startCountdown(180);
+                    connectWebSocket(data.md5);
+                } else {
+                    showError(data.error || 'Failed to create QR code');
+                    form.style.display = 'block';
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+                form.style.display = 'block';
+            } finally {
+                createBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        function connectWebSocket(md5) {
+            if (!socket) {
+                socket = io();
+
+                socket.on('connect', () => {
+                    console.log('✅ WebSocket connected!');
+                });
+
+                socket.on('payment_confirmed', (data) => {
+                    console.log('🎉 WebSocket received payment_confirmed:', data);
+                    if (data.md5 === currentMd5) {
+                        handlePaymentConfirmed();
+                    }
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('⚠️ WebSocket disconnected, using polling');
+                    startAutoCheck(md5);
+                });
+
+                socket.on('error', (error) => {
+                    console.error('❌ WebSocket error:', error);
+                });
+            }
+
+            console.log(`👤 Joining payment room: ${md5}`);
+            socket.emit('join_payment', { md5: md5 });
+            
+            console.log('🔄 Starting real-time payment polling every 2 seconds...');
+            startAutoCheck(md5);
+        }
+
+        function handlePaymentConfirmed() {
+            stopAutoCheck();
+            stopCountdown();
+
+            const statusEl = document.getElementById('paymentStatus');
+            const statusContainer = document.querySelector('.status-container');
+            
+            // Ensure status is visible
+            statusContainer.style.display = 'block';
+            statusEl.style.display = 'block';
+            
+            // Update to success state
+            statusEl.classList.remove('pending');
+            statusEl.classList.add('success');
+            statusEl.classList.add('show');
+            statusEl.innerHTML = `
+                <div class="status-icon">✅</div>
+                <div class="status-text">Payment Confirmed!</div>
+                <div class="status-subtext">Your transaction has been successfully processed</div>
+            `;
+
+            confirmBtn.style.display = 'block';
+
+            setTimeout(() => {
+                document.querySelector('.qr-image').style.opacity = '0.5';
+                document.querySelector('.bill-info').style.opacity = '0.5';
+                footer.style.opacity = '0.5';
+            }, 1500);
+        }
+
+        confirmBtn.addEventListener('click', () => {
+            document.querySelector('.qr-container').style.display = 'none';
+            document.querySelector('.bill-info').style.display = 'none';
+            confirmBtn.style.display = 'none';
+            stopCountdown();
+        });
+
+        async function checkPaymentStatus() {
+            try {
+                console.log(`🔍 Checking payment status for MD5: ${currentMd5}`);
+                const response = await fetch(`/check/${currentMd5}`);
+                const data = await response.json();
+
+                console.log(`📊 Payment check response:`, data);
+
+                if (response.ok && (data.status === true || data.status === "true")) {
+                    console.log('✅ Payment confirmed via API!');
+                    handlePaymentConfirmed();
+                } else {
+                    console.log('⏳ Still waiting for payment...', data.status);
+                }
+            } catch (error) {
+                console.error('❌ Payment check failed:', error);
+            }
+        }
+
+        function startAutoCheck(md5) {
+            stopAutoCheck();
+            console.log('🔄 Auto-check started - checking every 2 seconds for real payment');
+            autoCheckInterval = setInterval(() => {
+                checkPaymentStatus();
+            }, 2000);
+        }
+
+        function stopAutoCheck() {
+            if (autoCheckInterval) {
+                clearInterval(autoCheckInterval);
+                autoCheckInterval = null;
+            }
+        }
+
+        function startCountdown(seconds) {
+            stopCountdown();
+            let timeLeft = seconds;
+
+            updateCountdownDisplay(timeLeft);
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                updateCountdownDisplay(timeLeft);
+
+                if (timeLeft <= 0) {
+                    stopCountdown();
+                    stopAutoCheck();
+                    showError('QR Code Expired! Please generate a new one.');
+                }
+            }, 1000);
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+
+        function updateCountdownDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            countdown.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+
+            countdown.classList.remove('warning', 'critical');
+            if (seconds <= 30) {
+                countdown.classList.add('critical');
+            } else if (seconds <= 60) {
+                countdown.classList.add('warning');
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+    </script>
+</body>
+</html>
