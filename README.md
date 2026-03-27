@@ -1,8 +1,4 @@
-Absolutely! Here’s a **ready-to-copy `README.md` text** for your GitHub repo. You can just open `README.md` in your project folder and paste everything below:
 
----
-
-````markdown
 # KHQR Payment API (Flask)
 
 A simple **Python Flask API** for generating and checking **Bakong KHQR payments**.  
